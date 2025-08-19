@@ -8,6 +8,7 @@ class BagFileExtractor():
         self.bag_file_folder_name = bag_file_folder_name
 
         file_list = self.find_files()
+        print(file_list)
         self.bag = rosbag.Bag( bag_file_folder_name + '/' +file_list[0])
 
 
