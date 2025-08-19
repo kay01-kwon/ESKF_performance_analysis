@@ -52,6 +52,7 @@ if __name__ == '__main__':
     plt.legend()
 
     plt.tight_layout()
+    plt.savefig('position.png', dpi=600)
 
     plt.figure(1)
 
@@ -92,6 +93,7 @@ if __name__ == '__main__':
     plt.legend()
     
     plt.tight_layout()
+    plt.savefig('quaternion.png', dpi=600)
 
     plt.figure(2)
 
@@ -123,6 +125,7 @@ if __name__ == '__main__':
     plt.legend()
 
     plt.tight_layout()
+    plt.savefig('linear_velocity.png', dpi=600)
 
     plt.figure(3)
 
@@ -154,5 +157,6 @@ if __name__ == '__main__':
     plt.legend()
 
     plt.tight_layout()
+    plt.savefig('angular_velocity.png', dpi=600)
 
     plt.show()
