@@ -70,5 +70,5 @@ class BagFileExtractor():
                                 msg.pose.orientation.y,
                                 msg.pose.orientation.z]
             idx = idx + 1
-        pose_dict = {'time': pose_time, 'pose_data':pose_data}
+        pose_dict = {'time': pose_time, 'data':pose_data}
         return pose_dict
