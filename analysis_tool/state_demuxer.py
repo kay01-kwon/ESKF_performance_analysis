@@ -22,3 +22,13 @@ def state_demux(odom, frame_transform_required = False):
             v[i,:] = rotm @ v[i,:]
             
     return t, p, q, v, w
+
+def pose_demux(pose):
+    t = pose['time']
+    data = pose['data']
+
+    N = len(data)
+    p = np.zeros((N,3))
+    q = np.zeros((N,4))
+
+    return t, p, q
