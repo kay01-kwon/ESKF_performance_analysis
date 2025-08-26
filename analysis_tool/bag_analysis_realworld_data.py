@@ -14,7 +14,7 @@ if __name__ == '__main__':
     pose_mocap = bag_extractor.extract_odometry(topic_list[1])
 
     t_eskf, p_eskf, q_eskf, v_eskf, w_eskf = state_demux(odom_eskf, False)
-    t_mocap, p_mocap, q_mocap, _,_ = state_demux(pose_mocap, False)
+    t_mocap, p_mocap, q_mocap, _, _ = state_demux(pose_mocap, False)
     temp_t0 = t_eskf[0]
     t_eskf = t_eskf - temp_t0
     t_mocap = t_mocap - temp_t0
