@@ -1,5 +1,6 @@
 from bag_file_extractor import BagFileExtractor
-from state_demuxer import state_demux, pose_demux
+from state_demuxer import state_demux
+from state_muxer import odom_muxer, pose_muxer
 import matplotlib.pyplot as plt
 import math_tool
 
@@ -24,3 +25,6 @@ if __name__ == '__main__':
     N2 = len(t_mocap)
 
     N = N1 if N1 <= N2 else N2
+
+    odom_eskf = odom_muxer(t_eskf, p_eskf, q_eskf, v_eskf, w_eskf, N)
+    pose_mocap = pose_muxer(t_mocap, p_mocap, q_mocap, N)

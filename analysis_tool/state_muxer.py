@@ -1,10 +1,18 @@
 import numpy as np
 import math_tool
 
-def state_muxer(t, p, q, v, w, N):
+def odom_muxer(t, p, q, v, w, N):
     state = np.zeros((N, 13))
-    return t, state
+    state[:,0:3] = p
+    state[:,3:7] = q
+    state[:,7:10] = v
+    state[:,10:13] = w
+    odom = {'time': t, 'data': state}
+    return odom
 
-def state_muxer(t, p, q, N):
+def pose_muxer(t, p, q, N):
     state = np.zeros((N,7))
-    return t, state
+    state[:,0:3] = p
+    state[:,3:7] = q
+    pose = {'time': t, 'data': state}
+    return pose
