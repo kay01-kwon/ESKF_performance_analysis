@@ -1,3 +1,5 @@
+import matplotlib.pyplot as plt
+
 from bag_file_extractor import BagFileExtractor
 from state_demuxer import state_demux
 from state_muxer import odom_muxer, pose_muxer
@@ -30,4 +32,14 @@ if __name__ == '__main__':
 
     state_plotter_obj = StatePlotter(pose_mocap, odom_eskf)
 
-    state_plotter_obj.plot_position()
+    state_plotter_obj.plot_pos_group()
+
+    plt.savefig('position.png',dpi=600)
+
+    state_plotter_obj.plot_quat_group()
+
+    state_plotter_obj.plot_vel_group()
+
+    state_plotter_obj.plot_timestep()
+
+    state_plotter_obj.plot_show()
