@@ -30,17 +30,19 @@ if __name__ == '__main__':
     pose_mocap = pose_muxer(t_mocap, p_mocap, q_mocap, N)
     odom_eskf = odom_muxer(t_eskf, p_eskf, q_eskf, v_eskf, w_eskf, N)
 
-    state_plotter_obj = StatePlotter(pose_mocap, odom_eskf)
+    state_plotter_obj = StatePlotter(pose_mocap, odom_eskf, transparency=0.7)
 
     state_plotter_obj.plot_pos_group()
+    state_plotter_obj.plot_savefig(bag_folder_name+'/position.png',600)
 
     state_plotter_obj.plot_quat_group()
+    state_plotter_obj.plot_savefig(bag_folder_name+'/quaternion.png',600)
 
     state_plotter_obj.plot_vel_group()
-    state_plotter_obj.plot_savefig('linear_velocity.png',600)
+    state_plotter_obj.plot_savefig(bag_folder_name+'/linear_velocity.png',600)
 
     state_plotter_obj.plot_angular_vel_group()
-    state_plotter_obj.plot_savefig('angular_velocity.png',600)
+    state_plotter_obj.plot_savefig(bag_folder_name+'angular_velocity.png',600)
 
     # state_plotter_obj.plot_timestep()
 
