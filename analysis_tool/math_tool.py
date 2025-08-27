@@ -29,12 +29,12 @@ def quaternion_to_angle_axis_vec(q):
     qw, qx, qy, qz = q[0], q[1], q[2], q[3]
     q_vec = np.array([qx, qy, qz])
     q_vec_norm = linalg.norm(q_vec,2)
-    angle = np.atan2(q_vec_norm, qw)
+    angle = 2*np.arctan2(q_vec_norm, qw)
 
     if angle < 1e-30:
         axis_vec = np.zeros((3,))
     else:
-        axis_vec = q_vec/angle
+        axis_vec = q_vec/q_vec_norm
 
     theta = angle*axis_vec
     return theta

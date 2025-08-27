@@ -2,6 +2,7 @@ import numpy as np
 import math_tool
 from state_demuxer import state_demux, pose_demux
 import matplotlib.pyplot as plt
+from scipy.interpolate import make_interp_spline
 
 class StatePlotter:
     def __init__(self, pose_mocap, odom_eskf):
@@ -25,6 +26,7 @@ class StatePlotter:
         self.w_eskf = w_eskf
 
         self.v_mocap = self.compute_velocity_from_p_mocap()
+        self.w_mocap = self.compute_w_from_q_mocap()
 
     def plot_pos_group(self):
         fig = plt.figure(0)
@@ -50,15 +52,20 @@ class StatePlotter:
             ax_list.append(ax_temp)
         plt.tight_layout()
 
+    def plot_angular_vel_group(self):
+        fig = plt.figure(3)
+        ax_list = []
+        for idx in range(3):
+            ax_temp = self.plot_angular_vel(fig, idx)
+            ax_list.append(ax_temp)
+        plt.tight_layout()
+
     def plot_timestep(self):
         fig = plt.figure(6)
         ax = fig.add_subplot(1,1,1)
         dt_mocap = np.diff(self.t_mocap)
         t_tmocap = self.t_mocap[0:len(self.t_mocap)-1]
         ax.plot(t_tmocap, dt_mocap)
-
-    def plot_show(self):
-        plt.show()
 
     def plot_pos(self, fig, idx):
         ax = fig.add_subplot(3,1,idx+1)
@@ -137,6 +144,30 @@ class StatePlotter:
 
         self.set_title_label(ax, title_name, y_label_name)
 
+    def plot_angular_vel(self, fig, idx):
+        ax = fig.add_subplot(3,1,idx+1)
+
+        # Plot eskf position data
+        ax.plot(self.t_eskf, self.w_eskf[:,idx],
+                 color='blue', linewidth=2,
+                 linestyle='--', label='eskf')
+        ax.plot(self.t_vmocap, self.w_mocap[:,idx],
+                 color='orangered', linewidth=2,
+                 label='mocap')
+
+        if idx == 0:
+            title_name= '$\omega_{x} - t$'
+            y_label_name = '$\omega_{x} (rad/s)$'
+        elif idx == 1:
+            title_name ='$\omega_{y} - t$'
+            y_label_name = '$\omega_{y} (rad/s)$'
+        else:
+            title_name ='$\omega_{z} - t$'
+            y_label_name = '$\omega_{z} (rad/s)$'
+
+        self.set_title_label(ax, title_name, y_label_name)
+
+        return ax
 
     def set_title_label(self, ax, title_name, y_label_name):
         ax.set_title(title_name)
@@ -147,39 +178,61 @@ class StatePlotter:
         ax.grid(True)
 
     def compute_velocity_from_p_mocap(self):
-
-        dt_mocap = np.diff(self.t_mocap[:])
-
+        dt_mocap = np.diff(self.t_mocap)
         N = len(dt_mocap)
 
-        delx = np.diff(self.p_mocap[:,0])
-        dely = np.diff(self.p_mocap[:,1])
-        delz = np.diff(self.p_mocap[:,2])
-
-        vx = np.zeros((N,))
-        vy = np.zeros((N,))
-        vz = np.zeros((N,))
+        vx_lpf, vy_lpf, vz_lpf = 0, 0, 0
 
         v_mocap = np.zeros((N,3))
 
+        alpha = 0.97
+
         for i in range(N):
+            dt = dt_mocap[i]
+            vx = (self.p_mocap[i+1, 0] - self.p_mocap[i, 0])/dt
+            vy = (self.p_mocap[i+1, 1] - self.p_mocap[i, 1]) / dt
+            vz = (self.p_mocap[i+1, 2] - self.p_mocap[i, 2]) / dt
 
-            if dt_mocap[i] < 0.002:
-                dt = 0.010
-            else:
-                dt = dt_mocap[i]
-            vx[i] = delx[i]/dt
-            vy[i] = dely[i]/dt
-            vz[i] = delz[i]/dt
-
-        v_mocap[:,0] = vx
-        v_mocap[:,1] = vy
-        v_mocap[:,2] = vz
+            vx_lpf = alpha*vx_lpf + (1-alpha) * vx
+            vy_lpf = alpha * vy_lpf + (1 - alpha) * vy
+            vz_lpf = alpha * vz_lpf + (1 - alpha) * vz
+            v_mocap[i,0] = vx_lpf
+            v_mocap[i,1] = vy_lpf
+            v_mocap[i,2] = vz_lpf
 
         return v_mocap
-    def compute_angle_axis_vec(self, q1, q2):
-        q1_conj = math_tool.conjugate(q1)
-        del_q = math_tool.otimes(q1_conj, q2)
+
+    def compute_w_from_q_mocap(self):
+        dt_mocap = np.diff(self.t_mocap)
+        N = len(dt_mocap)
+
+        wx_lpf, wy_lpf, wz_lpf = 0, 0, 0
+
+        w_mocap = np.zeros((N,3))
+        alpha = 0.97
+        for i in range(N):
+            dt = dt_mocap[i]
+            q_curr = self.q_mocap[i,:]
+            q_next = self.q_mocap[i+1,:]
+            w_curr = self.compute_angle_axis_vec(q_curr, q_next)/dt
+            wx_lpf = alpha*wx_lpf + (1-alpha)*w_curr[0]
+            wy_lpf = alpha*wy_lpf + (1-alpha)*w_curr[1]
+            wz_lpf = alpha*wz_lpf + (1-alpha)*w_curr[2]
+
+            w_mocap[i,0] = wx_lpf
+            w_mocap[i,1] = wy_lpf
+            w_mocap[i,2] = wz_lpf
+
+        return w_mocap
+
+    def plot_show(self):
+        plt.show()
+
+    def plot_savefig(self, filename='figure.png', dpi = 600):
+        plt.savefig(filename, dpi=dpi)
+    def compute_angle_axis_vec(self, q_curr, q_next):
+        q_curr_conj = math_tool.conjugate(q_curr)
+        del_q = math_tool.otimes(q_curr_conj, q_next)
         theta = (math_tool.
                  quaternion_to_angle_axis_vec(del_q))
         return theta
