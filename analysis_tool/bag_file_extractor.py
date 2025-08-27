@@ -29,7 +29,7 @@ class BagFileExtractor():
 
         N_count = self.count_messages(topic_name)
 
-        odom_time = np.zeros((N_count,1))
+        odom_time = np.zeros((N_count,))
         odom_data = np.zeros((N_count,13))
 
         idx = 0
@@ -56,7 +56,7 @@ class BagFileExtractor():
 
         N_count = self.count_messages(topic_name)
 
-        pose_time = np.zeros((N_count,1))
+        pose_time = np.zeros((N_count,))
         pose_data = np.zeros((N_count,7))
 
         idx = 0
