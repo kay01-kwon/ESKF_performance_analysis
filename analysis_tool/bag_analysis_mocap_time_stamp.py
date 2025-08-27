@@ -27,13 +27,21 @@ if __name__ == '__main__':
     dt_avg_array = np.ones((N,1))*dt_avg
     dt_std = np.std(dt)
 
+    dt_max = np.max(dt)
+    dt_min = np.min(dt)
+
+    print('dt_avg:', dt_avg)
+    print('dt_max:', dt_max)
+    print('dt_min:', dt_min)
+    print('dt_avg:', dt_avg)
+    print('dt_std:', dt_std)
+
     idx = np.arange(1, N+1)
 
     plt.figure(0)
 
     plt.plot(idx,dt)
     plt.plot(idx, dt_avg_array, color='limegreen', linewidth=2)
-    plt.ylim([0, 15])
     plt.grid(True)
     plt.title('Mocap dt (ms)')
     plt.xlabel('Sequence')
