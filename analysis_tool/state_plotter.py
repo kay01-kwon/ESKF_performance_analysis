@@ -2,10 +2,9 @@ import numpy as np
 import math_tool
 from state_demuxer import state_demux, pose_demux
 import matplotlib.pyplot as plt
-from scipy.interpolate import make_interp_spline
 
 class StatePlotter:
-    def __init__(self, pose_mocap, odom_eskf):
+    def __init__(self, pose_mocap, odom_eskf, transparency):
 
         t_mocap, p_mocap, q_mocap = pose_demux(pose_mocap)
         t_eskf, p_eskf, q_eskf, v_eskf, w_eskf = state_demux(odom_eskf)
@@ -27,6 +26,8 @@ class StatePlotter:
 
         self.v_mocap = self.compute_velocity_from_p_mocap()
         self.w_mocap = self.compute_w_from_q_mocap()
+
+        self.transparency = transparency
 
     def plot_pos_group(self):
         fig = plt.figure(0)
@@ -78,7 +79,7 @@ class StatePlotter:
         # Plot eskf position data
         ax.plot(self.t_eskf, self.p_eskf[:,idx],
                  color='blue', linewidth=2,
-                 linestyle='--', label='eskf')
+                 alpha=self.transparency, label='eskf')
 
         if idx == 0:
             title_name= '$p_{x} - t$'
@@ -103,7 +104,7 @@ class StatePlotter:
 
         ax.plot(self.t_eskf, self.q_eskf[:,idx],
                 color='blue', linewidth=2,
-                linestyle='--', label='eskf')
+                alpha=self.transparency, label='eskf')
 
         if idx == 0:
             title_name= '$q_{w} - t$'
@@ -130,7 +131,7 @@ class StatePlotter:
 
         ax.plot(self.t_eskf, self.v_eskf[:,idx],
                 color='blue', linewidth=2,
-                linestyle='--', label='eskf')
+                alpha=self.transparency, label='eskf')
 
         if idx == 0:
             title_name= '$v_{x} - t$'
@@ -146,14 +147,14 @@ class StatePlotter:
 
     def plot_angular_vel(self, fig, idx):
         ax = fig.add_subplot(3,1,idx+1)
-
-        # Plot eskf position data
-        ax.plot(self.t_eskf, self.w_eskf[:,idx],
-                 color='blue', linewidth=2,
-                 linestyle='--', label='eskf')
         ax.plot(self.t_vmocap, self.w_mocap[:,idx],
                  color='orangered', linewidth=2,
                  label='mocap')
+        # Plot eskf position data
+        ax.plot(self.t_eskf, self.w_eskf[:,idx],
+                 color='blue', linewidth=2,
+                 alpha=self.transparency, label='eskf')
+
 
         if idx == 0:
             title_name= '$\omega_{x} - t$'
@@ -174,7 +175,7 @@ class StatePlotter:
         ax.set_xlabel('t (s)')
         ax.set_ylabel(y_label_name)
 
-        ax.legend()
+        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
         ax.grid(True)
 
     def compute_velocity_from_p_mocap(self):
