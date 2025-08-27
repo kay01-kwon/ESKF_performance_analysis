@@ -31,4 +31,7 @@ def pose_demux(pose):
     p = np.zeros((N,3))
     q = np.zeros((N,4))
 
+    p = data[:,0:3]
+    q = data[:,3:7]
+
     return t, p, q

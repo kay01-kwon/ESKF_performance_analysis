@@ -1,19 +1,18 @@
 from bag_file_extractor import BagFileExtractor
 from state_demuxer import state_demux
 from state_muxer import odom_muxer, pose_muxer
-import matplotlib.pyplot as plt
-import math_tool
+from state_plotter import StatePlotter
 
 if __name__ == '__main__':
     bag_folder_name = '../realworld_bag/'
 
-    topic_list = ['/eskf/Odom',
-                   '/mocap/Odom']
+    topic_list = ['/mocap/Odom','/eskf/Odom']
 
     bag_extractor = BagFileExtractor(bag_folder_name)
 
-    odom_eskf = bag_extractor.extract_odometry(topic_list[0])
-    pose_mocap = bag_extractor.extract_odometry(topic_list[1])
+
+    pose_mocap = bag_extractor.extract_odometry(topic_list[0])
+    odom_eskf = bag_extractor.extract_odometry(topic_list[1])
 
     t_eskf, p_eskf, q_eskf, v_eskf, w_eskf = state_demux(odom_eskf, False)
     t_mocap, p_mocap, q_mocap, _, _ = state_demux(pose_mocap, False)
@@ -26,5 +25,9 @@ if __name__ == '__main__':
 
     N = N1 if N1 <= N2 else N2
 
-    odom_eskf = odom_muxer(t_eskf, p_eskf, q_eskf, v_eskf, w_eskf, N)
     pose_mocap = pose_muxer(t_mocap, p_mocap, q_mocap, N)
+    odom_eskf = odom_muxer(t_eskf, p_eskf, q_eskf, v_eskf, w_eskf, N)
+
+    state_plotter_obj = StatePlotter(pose_mocap, odom_eskf)
+
+    state_plotter_obj.plot_position()
