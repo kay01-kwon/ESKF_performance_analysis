@@ -3,13 +3,13 @@ import rosbag
 import numpy as np
 
 class BagFileExtractor():
-    def __init__(self, bag_file_folder_name):
+    def __init__(self, bag_file_folder_name, bag_file_idx):
 
         self.bag_file_folder_name = bag_file_folder_name
 
         file_list = self.find_files()
         print(file_list)
-        self.bag = rosbag.Bag( bag_file_folder_name + '/' +file_list[0])
+        self.bag = rosbag.Bag( bag_file_folder_name + '/' +file_list[bag_file_idx])
 
 
     def find_files(self):

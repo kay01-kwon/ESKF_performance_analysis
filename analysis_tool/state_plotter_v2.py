@@ -1,12 +1,13 @@
 import numpy as np
 import math_tool
 from state_demuxer import state_demux, pose_demux
-from scipy.interpolate import interp1d
 from scipy.signal import savgol_filter
+from scipy.interpolate import interp1d
 import matplotlib.pyplot as plt
 
+
 class StatePlotter:
-    def __init__(self, pose_mocap, odom_eskf, window_size, transparency):
+    def __init__(self, pose_mocap, odom_eskf, transparency):
 
         t_mocap, p_mocap, q_mocap = pose_demux(pose_mocap)
         t_eskf, p_eskf, q_eskf, v_eskf, w_eskf = state_demux(odom_eskf)
@@ -15,45 +16,18 @@ class StatePlotter:
         self.N = len(t_mocap)
 
         self.t_mocap = t_mocap
+        print(len(t_mocap))
+        self.t_vmocap = t_mocap[0:len(t_mocap)-1]
+        self.p_mocap = p_mocap
+        self.q_mocap = q_mocap
 
-        x_interp_fn = interp1d(t_mocap, p_mocap[:,0], kind='linear')
-        y_interp_fn = interp1d(t_mocap, p_mocap[:,1], kind='linear')
-        z_interp_fn = interp1d(t_mocap, p_mocap[:,2], kind='linear')
-
-        x_mocap_interpl = x_interp_fn(t_eskf[10:-10])
-        y_mocap_interpl = y_interp_fn(t_eskf[10:-10])
-        z_mocap_interpl = z_interp_fn(t_eskf[10:-10])
-
-        N = len(t_eskf[10:-10])
-        self.p_mocap = np.zeros((N,3))
-
-        self.p_mocap[:,0] = x_mocap_interpl
-        self.p_mocap[:,1] = y_mocap_interpl
-        self.p_mocap[:,2] = z_mocap_interpl
-
-        self.q_mocap = self.slerp(t_mocap, q_mocap, t_eskf[10:-10])
-
-        self.t_eskf = t_eskf[10:-10]
-        self.p_eskf = p_eskf[10:-10]
-        self.q_eskf = q_eskf[10:-10]
-        self.v_eskf = v_eskf[10:-10]
-        self.w_eskf = w_eskf[10:-10]
-
-        # self.v_mocap = self.compute_velocity_from_p_mocap()
-        dxdt_smooth = savgol_filter(x_mocap_interpl, window_size, 3, deriv=1, delta=0.005)
-        dydt_smooth = savgol_filter(y_mocap_interpl, window_size, 3, deriv=1, delta=0.005)
-        dzdt_smooth = savgol_filter(z_mocap_interpl, window_size, 3, deriv=1, delta=0.005)
-
-        print(dxdt_smooth)
-
-        self.v_mocap = np.zeros((N,3))
-
-        # self.v_mocap[:,0] = dxdt_smooth
-        # self.v_mocap[:,1] = dydt_smooth
-        # self.v_mocap[:,2] = dzdt_smooth
+        self.t_eskf = t_eskf
+        self.p_eskf = p_eskf
+        self.q_eskf = q_eskf
+        self.v_eskf = v_eskf
+        self.w_eskf = w_eskf
 
         self.v_mocap = self.compute_velocity_from_p_mocap()
-
         self.w_mocap = self.compute_w_from_q_mocap()
 
         self.transparency = transparency
@@ -102,7 +76,7 @@ class StatePlotter:
 
         # Plot mocap position data
         # idx 0:x, 1:y, 2:z
-        ax.plot(self.t_eskf, self.p_mocap[:,idx],
+        ax.plot(self.t_mocap, self.p_mocap[:,idx],
                  color='orangered', linewidth=2,
                  label='mocap')
         # Plot eskf position data
@@ -127,7 +101,7 @@ class StatePlotter:
     def plot_quat(self, fig, idx):
         ax = fig.add_subplot(4,1,idx+1)
 
-        ax.plot(self.t_eskf, self.q_mocap[:,idx],
+        ax.plot(self.t_mocap, self.q_mocap[:,idx],
                 color='orangered', linewidth=2,
                 label='mocap')
 
@@ -154,7 +128,7 @@ class StatePlotter:
 
     def plot_vel(self, fig, idx):
         ax = fig.add_subplot(3,1,idx+1)
-        ax.plot(self.t_eskf, self.v_mocap[:,idx],
+        ax.plot(self.t_vmocap, self.v_mocap[:,idx],
                 color='orangered', linewidth=2,
                 label='mocap')
 
@@ -176,7 +150,7 @@ class StatePlotter:
 
     def plot_angular_vel(self, fig, idx):
         ax = fig.add_subplot(3,1,idx+1)
-        ax.plot(self.t_eskf, self.w_mocap[:,idx],
+        ax.plot(self.t_vmocap, self.w_mocap[:,idx],
                  color='orangered', linewidth=2,
                  label='mocap')
         # Plot eskf position data
@@ -207,24 +181,18 @@ class StatePlotter:
         ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left', borderaxespad=0.)
         ax.grid(True)
 
-
-    def filter_p_mocap(self):
-        x_mocap = self.p_mocap[:,0]
-        y_mocap = self.p_mocap[:,1]
-        z_mocap = self.p_mocap[:,2]
-
     def compute_velocity_from_p_mocap(self):
-        dt_eskf = np.diff(self.t_eskf)
-        N = len(dt_eskf)
+        dt_mocap = np.diff(self.t_mocap)
+        N = len(dt_mocap)
 
         vx_lpf, vy_lpf, vz_lpf = 0, 0, 0
 
-        v_mocap = np.zeros((N+1,3))
+        v_mocap = np.zeros((N,3))
 
         alpha = 0.97
 
         for i in range(N):
-            dt = dt_eskf[i]
+            dt = dt_mocap[i]
             vx = (self.p_mocap[i+1, 0] - self.p_mocap[i, 0])/dt
             vy = (self.p_mocap[i+1, 1] - self.p_mocap[i, 1]) / dt
             vz = (self.p_mocap[i+1, 2] - self.p_mocap[i, 2]) / dt
@@ -236,19 +204,18 @@ class StatePlotter:
             v_mocap[i,1] = vy_lpf
             v_mocap[i,2] = vz_lpf
 
-
         return v_mocap
 
     def compute_w_from_q_mocap(self):
-        dt_eskf = np.diff(self.t_eskf)
-        N = len(dt_eskf)
+        dt_mocap = np.diff(self.t_mocap)
+        N = len(dt_mocap)
 
         wx_lpf, wy_lpf, wz_lpf = 0, 0, 0
 
-        w_mocap = np.zeros((N+1,3))
+        w_mocap = np.zeros((N,3))
         alpha = 0.97
         for i in range(N):
-            dt = dt_eskf[i]
+            dt = dt_mocap[i]
             q_curr = self.q_mocap[i,:]
             q_next = self.q_mocap[i+1,:]
             w_curr = self.compute_angle_axis_vec(q_curr, q_next)/dt
@@ -267,38 +234,6 @@ class StatePlotter:
 
     def plot_savefig(self, filename='figure.png', dpi = 600):
         plt.savefig(filename, dpi=dpi)
-
-    def slerp(self, t, q, t_new):
-
-        N = len(t_new)
-        q_new = np.zeros((N,4))
-        j = 0
-        for i, t_ in enumerate(t_new):
-            while not (t_ >= t[j] and t_ <= t[j+1]):
-                j = j + 1
-
-            qi = q[j,:]
-            qf = q[j+1,:]
-            delta_theta = self.compute_angle_axis_vec(qi, qf)
-
-            angle = np.linalg.norm(delta_theta,2)
-
-            if angle < 1e-30:
-                axis = np.zeros((3,))
-            else:
-                axis = delta_theta/np.linalg.norm(delta_theta,2)
-
-            alpha = (t_ - t[j]) / (t[j + 1] - t[j])
-            del_q = np.array([np.cos(alpha*angle/2),
-                              axis[0]*np.sin(alpha*angle/2),
-                              axis[1]*np.sin(alpha*angle/2),
-                              axis[2]*np.sin(alpha*angle/2)])
-
-            q_new[i,:] = math_tool.otimes(qi,del_q)
-
-        return q_new
-
-
     def compute_angle_axis_vec(self, q_curr, q_next):
         q_curr_conj = math_tool.conjugate(q_curr)
         del_q = math_tool.otimes(q_curr_conj, q_next)
